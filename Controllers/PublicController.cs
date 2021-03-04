@@ -60,6 +60,7 @@ namespace backend.Controllers
             u.Entity.role = this.db.Roles.Find(user.IdRole);
             return u.Entity;
         }
+
     }
 
 }

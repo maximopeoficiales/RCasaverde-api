@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 #nullable disable
 
@@ -28,10 +29,15 @@ namespace backend.Models
         public string DescriptionLong { get; set; }
         public string Active { get; set; }
 
+        [JsonIgnore]
         public virtual Category IdCategoryNavigation { get; set; }
+        [JsonIgnore]
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        [JsonIgnore]
         public virtual ICollection<ProductImage> ProductImages { get; set; }
+        [JsonIgnore]
         public virtual ICollection<Recipe> Recipes { get; set; }
+        [JsonIgnore]
         public virtual ICollection<UserReview> UserReviews { get; set; }
     }
 }
