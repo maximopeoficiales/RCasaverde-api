@@ -8,8 +8,10 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using backend.Config;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using System.Security.Principal;
 
-namespace dotnet_core_api.Config
+namespace backend.Config
 {
 
     public class JwtAuthManager : IJwtAuthManager
@@ -17,13 +19,15 @@ namespace dotnet_core_api.Config
         private dbContext db = new dbContext();
         private Encription bcrypt = new Encription();
         private readonly string key;
+        private readonly IConfiguration configuration;
 
-        public JwtAuthManager(string key)
+        public JwtAuthManager(IConfiguration Configuration)
         {
-            this.key = key;
+            configuration = Configuration;
+            key = configuration.GetValue<string>("jwt-secret");
         }
 
-        public async Task<UserAuthResponse> AuthenticateUser(string username, string password)
+        public async Task<UserAuthResponse> AuthenticateUserAsync(string username, string password)
         {
             User user = await this.db.Users.AsNoTracking().Where(e => e.Username == username).FirstOrDefaultAsync();
 
@@ -41,7 +45,6 @@ namespace dotnet_core_api.Config
                     Subject = new ClaimsIdentity(new Claim[] {
                     new Claim(ClaimTypes.Name, username)
                 }),
-                    Expires = DateTime.UtcNow.AddHours(0),
                     SigningCredentials =
                         new SigningCredentials(
                                 new SymmetricSecurityKey(tokenKey),
@@ -57,7 +60,7 @@ namespace dotnet_core_api.Config
             }
         }
 
-        public async Task<StaffAuthResponse> AuthenticateStaff(string username, string password)
+        public async Task<StaffAuthResponse> AuthenticateStaffAsync(string username, string password)
         {
             Staff user = await this.db.Staff.AsNoTracking().Where(e => e.Username == username).FirstOrDefaultAsync();
 
@@ -75,7 +78,6 @@ namespace dotnet_core_api.Config
                     Subject = new ClaimsIdentity(new Claim[] {
                     new Claim(ClaimTypes.Name, username)
                 }),
-                    Expires = DateTime.UtcNow.AddHours(0),
                     SigningCredentials =
                         new SigningCredentials(
                                 new SymmetricSecurityKey(tokenKey),
@@ -90,6 +92,41 @@ namespace dotnet_core_api.Config
                 return null;
             }
         }
-    }
 
+        public async Task<bool> isTokenValidAsync(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var validationParameters = GetValidationParameters();
+            SecurityToken validatedToken;
+            IPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+            // Si el tiempo actual es mayor a el tiempo de expiración del token
+            if (principal.Identity.IsAuthenticated)
+            {
+                return await Task.Run(() => true);
+            }
+            else
+            {
+                return await Task.Run(() => false);
+            }
+        }
+
+        private TokenValidationParameters GetValidationParameters()
+        {
+            return new TokenValidationParameters()
+            {
+                ValidateLifetime = false, // Because there is no expiration in the generated token
+                ValidateAudience = false, // Because there is no audiance in the generated token
+                ValidateIssuer = false,   // Because there is no issuer in the generated token
+                ValidIssuer = "any",
+                ValidAudience = "any",
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.configuration.GetValue<string>("jwt-secret"))) // The same key as the one that generate the token
+            };
+        }
+
+        public Task invalidateTokenAsync(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwtToken = tokenHandler.ReadJwtToken(token);
+        }
+    }
 }

@@ -1,6 +1,5 @@
-namespace dotnet_core_api.Config
+namespace backend.Config
 {
-
     public class Encription
     {
         public string hashPassword(string password)
@@ -13,5 +12,4 @@ namespace dotnet_core_api.Config
             return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
     }
-
 }

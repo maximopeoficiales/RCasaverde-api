@@ -7,6 +7,7 @@ using System.Net.Mime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
+using backend.Config;
 
 namespace backend.Controllers
 {
@@ -16,6 +17,7 @@ namespace backend.Controllers
     public class PublicController : ControllerBase
     {
         private dbContext db = new dbContext();
+        private Encription bcrypt = new Encription();
 
         [HttpPost("signup")]
         [Consumes(MediaTypeNames.Application.Json)]
@@ -23,13 +25,11 @@ namespace backend.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<User>> signup([FromBody] User user)
         {
-            EntityEntry<User> u = await this.db.Users.AddAsync(user);
             try
             {
-                if (u.State == EntityState.Added)
-                {
-                    await this.db.SaveChangesAsync();
-                }
+                user.Password = bcrypt.hashPassword(user.Password);
+                await this.db.Users.AddAsync(user);
+                await this.db.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
@@ -57,8 +57,8 @@ namespace backend.Controllers
                 }
             }
 
-            u.Entity.role = this.db.Roles.Find(user.IdRole);
-            return u.Entity;
+            user.role = this.db.Roles.Find(user.IdRole);
+            return Ok(user);
         }
 
     }

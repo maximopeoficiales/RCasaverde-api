@@ -6,8 +6,10 @@ namespace backend.Config
 
     public interface IJwtAuthManager
     {
-        Task<UserAuthResponse> AuthenticateUser(string username, string password);
-        Task<StaffAuthResponse> AuthenticateStaff(string username, string password);
+        Task<UserAuthResponse> AuthenticateUserAsync(string username, string password);
+        Task<StaffAuthResponse> AuthenticateStaffAsync(string username, string password);
+        Task<bool> isTokenValidAsync(string token);
+        Task invalidateTokenAsync(string token);
     }
 
 }
