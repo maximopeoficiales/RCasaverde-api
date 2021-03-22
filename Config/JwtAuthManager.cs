@@ -43,8 +43,9 @@ namespace backend.Config
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(new Claim[] {
-                    new Claim(ClaimTypes.Name, username)
-                }),
+                        new Claim(ClaimTypes.Name, username)
+                    }),
+                    Expires = DateTime.UtcNow.AddSeconds(20),
                     SigningCredentials =
                         new SigningCredentials(
                                 new SymmetricSecurityKey(tokenKey),
@@ -76,8 +77,8 @@ namespace backend.Config
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(new Claim[] {
-                    new Claim(ClaimTypes.Name, username)
-                }),
+                        new Claim(ClaimTypes.Name, username)
+                    }),
                     SigningCredentials =
                         new SigningCredentials(
                                 new SymmetricSecurityKey(tokenKey),
@@ -100,7 +101,7 @@ namespace backend.Config
             SecurityToken validatedToken;
             IPrincipal principal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
             // Si el tiempo actual es mayor a el tiempo de expiración del token
-            if (principal.Identity.IsAuthenticated)
+            if (validatedToken.ValidTo.CompareTo(DateTime.Now) < 0)
             {
                 return await Task.Run(() => true);
             }
@@ -123,10 +124,14 @@ namespace backend.Config
             };
         }
 
-        public Task invalidateTokenAsync(string token)
+        public void invalidateToken(string token)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            JwtSecurityToken jwtToken = tokenHandler.ReadJwtToken(token);
+            try {
+                throw new SecurityTokenInvalidLifetimeException(token);
+            } catch (SecurityTokenInvalidLifetimeException err) {
+                err.Expires = DateTime.Now;
+            } 
         }
+    
     }
 }

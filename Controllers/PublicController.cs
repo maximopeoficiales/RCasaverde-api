@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using backend.Config;
+using System;
 
 namespace backend.Controllers
 {
@@ -31,8 +32,9 @@ namespace backend.Controllers
                 await this.db.Users.AddAsync(user);
                 await this.db.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException err)
             {
+                Console.WriteLine(err.InnerException.Message);
                 User existentUser = await this.db.Users.Where(u =>
                     u.Phone == user.Phone ||
                     u.Email == user.Email ||
